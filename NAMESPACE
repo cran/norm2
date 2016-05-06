@@ -1,0 +1,56 @@
+
+useDynLib( norm2, .registration=TRUE )
+
+import( "stats" )
+
+export( emNorm )
+export( emNorm.default )
+export( emNorm.norm )
+export( emNorm.formula )
+
+export( impNorm )
+export( impNorm.default )
+export( impNorm.norm )
+export( impNorm.formula )
+
+export( loglikNorm )
+export( loglikNorm.default )
+export( loglikNorm.norm )
+export( loglikNorm.formula )
+
+export( logpostNorm )
+export( logpostNorm.default )
+export( logpostNorm.norm )
+export( logpostNorm.formula )
+
+export( mcmcNorm )
+export( mcmcNorm.default )
+export( mcmcNorm.norm )
+export( mcmcNorm.formula )
+
+export( miInference )
+export( print.miInference )
+
+export( summary.norm )
+export( print.summary.norm )
+
+
+S3method( emNorm, default )
+S3method( emNorm, norm )
+S3method( emNorm, formula )
+S3method( impNorm, default )
+S3method( impNorm, norm )
+S3method( impNorm, formula )
+S3method( loglikNorm, default )
+S3method( loglikNorm, norm )
+S3method( loglikNorm, formula )
+S3method( logpostNorm, default )
+S3method( logpostNorm, norm )
+S3method( logpostNorm, formula )
+S3method( mcmcNorm, default )
+S3method( mcmcNorm, norm )
+S3method( mcmcNorm, formula )
+S3method( print, norm )
+S3method( print, summary.norm )
+S3method( summary, norm )
+S3method( print, miInference )

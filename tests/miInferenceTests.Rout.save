@@ -1,0 +1,64 @@
+
+R version 3.2.1 (2015-06-18) -- "World-Famous Astronaut"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: i386-w64-mingw32/i386 (32-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(norm2)
+> 
+> # generate M=25 imputations for cholesterol data
+> data(cholesterol)
+> emResult <- emNorm(cholesterol)
+> set.seed(999)
+> mcmcResult <- mcmcNorm(emResult, iter=2500, impute.every=100)
+> 
+> M <- 25
+> est.list <- std.err.list <- as.list( NULL )
+> est <- std.err <- df.complete <- numeric(3)
+> names(est) <- names(std.err) <- names(df.complete) <-
++    c("Y2 versus Y1", "Y3 versus Y1", "Y3 versus Y2")
+> for( m in 1:M ){
++    # extract the m-th imputed dataset
++    y.imp <- data.frame( mcmcResult$imp.list[[m]] )
++    # contrast: Y2 versus Y1
++    diff <- y.imp$Y2 - y.imp$Y1
++    est[1] <- mean( diff )
++    std.err[1] <- sqrt( var(diff) / length(diff) )
++    df.complete[1] <- length(diff) - 1
++    # contrast: Y3 versus Y1
++    diff <- y.imp$Y3 - y.imp$Y1
++    est[2] <- mean( diff )
++    std.err[2] <- sqrt( var(diff) / length(diff) )
++    df.complete[2] <- length(diff) - 1
++    # contrast: Y3 versus Y2
++    diff <- y.imp$Y3 - y.imp$Y2
++    est[3] <- mean( diff )
++    std.err[3] <- sqrt( var(diff) / length(diff) )
++    df.complete[3] <- length(diff) - 1
++    # append lists
++    est.list[[m]] <- est
++    std.err.list[[m]] <- std.err
++    }
+> 
+> print( miInference( est.list, std.err.list, df.complete=df.complete ) )
+                  Est      SE Est/SE   df     p Pct.mis
+Y2 versus Y1 -23.2860  7.2340 -3.219 25.2 0.004     0.0
+Y3 versus Y1 -28.8020 10.8650 -2.651 22.0 0.015    11.6
+Y3 versus Y2  -5.5163  7.5641 -0.729 18.3 0.475    24.0
+> 
+> proc.time()
+   user  system elapsed 
+   0.51    0.06    0.57 
