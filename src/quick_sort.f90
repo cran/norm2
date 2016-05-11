@@ -159,7 +159,7 @@ contains
       call err_handle(err, 2, whichsub = subname, whichmod = modname )
       goto 999
       ! final cleanup
-999   deallocate( istk )
+999   if( allocated( istk ) ) deallocate( istk )
    end function qsort_strings
    !##################################################################
    integer(kind=our_int) function qsort_double( darr1, iarr, idim, &
@@ -285,7 +285,7 @@ contains
       call err_handle(err, 2, whichsub = subname, whichmod = modname )
       goto 999
       ! final cleanup
-999   deallocate( istk )
+999   if( allocated( istk ) ) deallocate( istk )
    end function qsort_double
    !##################################################################
    integer(kind=our_int) function qsort_integer( darr1, iarr, idim, &
@@ -411,7 +411,7 @@ contains
       call err_handle(err, 2, whichsub = subname, whichmod = modname )
       goto 999
       ! final cleanup
-999   deallocate( istk )
+999   if( allocated( istk ) ) deallocate( istk )
     end function qsort_integer
    !##################################################################
    subroutine sswap( sarr, i, j, ilen )

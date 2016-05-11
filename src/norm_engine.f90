@@ -388,13 +388,17 @@ contains
       ! declare locals
       integer(kind=our_int) :: iter_local
       logical :: converged_local, aborted
-      real(kind=our_dble), pointer :: loglik_local(:), logpost_local(:)
+      real(kind=our_dble), pointer :: loglik_local(:)=>null(), &
+           logpost_local(:)=>null()
       type(workspace_type) :: work
       integer(kind=our_int) :: ijunk
       character(len=12) :: sInt
       character(len=*), parameter :: subname = "run_norm_engine_em"
       ! begin
       answer = RETURN_FAIL
+      sInt = "???"
+      ! to enable text-based messaging, un-comment the lines where we
+      ! write to sInt
       ! check args and prepare for EM
       if( size(y,1) /= size(x,1) ) goto 200
       !
@@ -474,7 +478,7 @@ contains
       do
          if( max_iter == 0 ) exit
          iter_local = iter_local + 1
-         write(sInt,"(I12)") iter_local
+         ! write(sInt,"(I12)") iter_local
          sInt = adjustl(sInt)
          work%oldoldbeta(:,:) = work%oldbeta(:,:)
          work%oldoldsigma(:,:) = work%oldsigma(:,:)
@@ -792,10 +796,12 @@ contains
       integer(kind=our_int) :: iter_local, iter_complete
       integer(kind=our_int) :: ijunk, nimps, impno, r, p, nparam, &
            which_cycle
-      real (kind=our_dble), pointer :: loglik_local(:), &
-           logpost_local(:), beta_series_local(:,:,:), &
-           sigma_series_local(:,:,:), worst_series_local(:), &
-           imp_list_local(:,:,:)
+      real (kind=our_dble), pointer :: loglik_local(:)=>null(), &
+           logpost_local(:)=>null(), &
+           beta_series_local(:,:,:)=>null(), &
+           sigma_series_local(:,:,:)=>null(), &
+           worst_series_local(:)=>null(), &
+           imp_list_local(:,:,:)=>null()
       type(workspace_type) :: work
       character(len=12) :: sInt, sInt2
       logical :: aborted
@@ -804,6 +810,8 @@ contains
       integer(our_int) :: i,j,k
       ! begin
       answer = RETURN_FAIL
+      sInt = "???"
+      sInt2 = "???"
       ! check args
       if( size(y,1) /= size(x,1) ) goto 200
       !
@@ -917,10 +925,10 @@ contains
       impno = 0
       iter_complete = 0
       do iter_local = 1, max_iter
-         write(sInt,"(I12)") iter_local
+         ! write(sInt,"(I12)") iter_local
          sInt = adjustl(sInt)
          do which_cycle = 1, multicycle
-            write(sInt2,"(I12)") which_cycle
+            ! write(sInt2,"(I12)") which_cycle
             sInt2 = adjustl(sInt2)
             if( run_istep( work, rand, err ) == RETURN_FAIL) then
                aborted = .true.
@@ -1453,11 +1461,16 @@ contains
            y, work%mvcode, work, err) == RETURN_FAIL ) goto 800
       ! normal exit
       answer = RETURN_SUCCESS
-      deallocate(sort_strings)
+      deallocate(sort_strings, stat=status)
+      if(status/=0) goto 750
       return
       ! error traps
 700   call err_handle(err, 1, &
            comment = "Unable to allocate memory for object" )
+      call err_handle(err, 2, whichsub = subname, whichmod = modname )
+      return
+750   call err_handle(err, 1, &
+           comment = "Unable to deallocate memory for object" )
       call err_handle(err, 2, whichsub = subname, whichmod = modname )
       return
 800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
@@ -1724,8 +1737,9 @@ contains
       character(len=12) :: Sint
       ! begin
       answer = RETURN_FAIL
+      sInt = "???"
       do j = 1, work%r
-         write(Sint,"(I12)") j
+         ! write(Sint,"(I12)") j
          ! compute mean of observed values
          nobs = 0
          sum = 0.D0
@@ -1788,6 +1802,7 @@ contains
       character(len=12) :: Sint
       ! begin
       answer = RETURN_FAIL
+      sInt = "???"
       ! get starting values for beta
       work%sigma(:,:) = 0.D0
       work%sigma_ridge(:,:) = 0.D0
@@ -1796,7 +1811,7 @@ contains
          ! regress y on x's using observed cases only, store
          ! results in beta and sigma
          do jj = 1, work%r
-            write(Sint,"(I12)") jj
+            ! write(Sint,"(I12)") jj
             ! store x-matrix in wknpA, y-vector in wknA
             nobs = 0
             ii = 0
@@ -2230,7 +2245,8 @@ contains
            vscale, diff
       logical :: vvec_converged, lambda_converged
       integer(kind=our_int) :: k, i, kk, kkk, ijunk, j, posn
-      real(kind=our_dble), pointer :: f1(:), f2(:), ju(:), ju_new(:)
+      real(kind=our_dble), pointer :: f1(:)=>null(), &
+           f2(:)=>null(), ju(:)=>null(), ju_new(:)=>null()
       integer(kind=our_int), parameter :: maxits_power = 20, &
            maxits_richardson = 20
       real(kind=our_dble), parameter :: criterion_power = 1.D-4, &
@@ -2637,7 +2653,7 @@ contains
       ! put lower-triangular Bartlett factor into wkrrA and invert
       xi = work%prior_df + real( work%n - work%p, our_dble )
       do j = 1, work%r
-         df = xi + real(-j + 1, kind=our_sgle)
+         df = real( xi, kind=our_sgle) + real(-j + 1, kind=our_sgle)
          if( ran_genchi( rand, df, z, err) == RETURN_FAIL) goto 800
          work%wkrrA(j,j) = sqrt(z)
          do k = 1, j-1

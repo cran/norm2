@@ -1,0 +1,8 @@
+
+norm2 News
+
+CHANGES IN version 2.0.1
+
+   * Problems in Fortran code re: uninitialized pointers were corrected
+
+   * Problems with Makevars re: parallel builds were corrected

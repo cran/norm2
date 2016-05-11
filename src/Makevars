@@ -1,10 +1,8 @@
-.Phony : all clean
+.PHONY : all
 
-.PHONY : all clean
+all : $(SHLIB)
 
-all : $(SHLIB) clean
-
-$(SHLIB) : norm2.o error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o tabulate.o norm_engine.o
+$(SHLIB) : norm2.o error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o norm_engine.o
 
 program_constants.o : program_constants.f90
 
@@ -18,11 +16,6 @@ matrix_methods.o : matrix_methods.f90 error_handler.o program_constants.o
 
 random_generator.o : random_generator.f90 error_handler.o program_constants.o
 
-tabulate.o : tabulate.f90 error_handler.o program_constants.o
+norm_engine.o : norm_engine.f90 error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o
 
-norm_engine.o : norm_engine.f90 error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o tabulate.o
-
-norm2.o : norm2.f90 error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o tabulate.o norm_engine.o
-
-clean :
-	rm *.o *.mod
+norm2.o : norm2.f90 error_handler.o program_constants.o dynalloc.o quick_sort.o matrix_methods.o random_generator.o norm_engine.o

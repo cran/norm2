@@ -77,16 +77,17 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    integer(kind=our_int), intent(out) :: msg_codes( msg_len_max, 8 )
    integer(kind=our_int), intent(out) :: msg_len_actual
    ! declare local pointers to pass as arguments
-   real(kind=our_dble), pointer :: beta_start_local(:,:), &
-        sigma_start_local(:,:), loglik_local(:), logpost_local(:), &
-        beta_local(:,:), sigma_local(:,:), yimp_local(:,:)
-   logical, pointer :: mis_local(:,:)
-   integer(kind=our_int), pointer :: n_in_patt_local(:), &
-        nobs_local(:), which_patt_local(:)
+   real(kind=our_dble), pointer :: beta_start_local(:,:)=>null(), &
+        sigma_start_local(:,:)=>null(), loglik_local(:)=>null(), &
+        logpost_local(:)=>null(), beta_local(:,:)=>null(), &
+        sigma_local(:,:)=>null(), yimp_local(:,:)=>null()
+   logical, pointer :: mis_local(:,:)=>null()
+   integer(kind=our_int), pointer :: n_in_patt_local(:)=>null(), &
+        nobs_local(:)=>null(), which_patt_local(:)=>null()
    real(kind=our_dble), pointer :: &
-        ybar_local(:), ysdv_local(:), &
-        rate_beta_local(:,:), rate_sigma_local(:,:), &
-        worst_linear_coef_local(:)
+        ybar_local(:)=>null(), ysdv_local(:)=>null(), &
+        rate_beta_local(:,:)=>null(), rate_sigma_local(:,:)=>null(), &
+        worst_linear_coef_local(:)=>null()
    ! other locals
    character(len=20) :: prior_type
    integer(our_int) :: ijunk
@@ -110,6 +111,7 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    if( dyn_dealloc(  ysdv_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc(  rate_beta_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc(  rate_sigma_local, err ) == RETURN_FAIL ) goto 800
+   if( dyn_dealloc(  worst_linear_coef_local, err ) == RETURN_FAIL ) goto 800
    ! allocate local pointers that need it
    if( dyn_alloc( beta_start_local, p, r, err ) == RETURN_FAIL ) goto 800
    if( dyn_alloc( sigma_start_local, r, r, err ) == RETURN_FAIL ) goto 800
@@ -315,17 +317,18 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    integer(kind=our_int), intent(out) :: msg_len_actual
    ! declare locals
    character(len=20) :: prior_type
-   real(kind=our_dble), pointer :: beta_start_local(:,:), &
-        sigma_start_local(:,:), beta_local(:,:), &
-        sigma_local(:,:), yimp_local(:,:), &
-        beta_series_local(:,:,:), sigma_series_local(:,:,:), &
-        worst_series_local(:), &
-        loglik_local(:), logpost_local(:), &
-        ybar_local(:), ysdv_local(:), &
-        imp_list_local(:,:,:)
-   logical, pointer :: mis_local(:,:)
-   integer(kind=our_int), pointer :: n_in_patt_local(:), &
-        nobs_local(:), which_patt_local(:)
+   real(kind=our_dble), pointer :: beta_start_local(:,:)=>null(), &
+        sigma_start_local(:,:)=>null(), beta_local(:,:)=>null(), &
+        sigma_local(:,:)=>null(), yimp_local(:,:)=>null(), &
+        beta_series_local(:,:,:)=>null(), &
+        sigma_series_local(:,:,:)=>null(), &
+        worst_series_local(:)=>null(), &
+        loglik_local(:)=>null(), logpost_local(:)=>null(), &
+        ybar_local(:)=>null(), ysdv_local(:)=>null(), &
+        imp_list_local(:,:,:)=>null()
+   logical, pointer :: mis_local(:,:)=>null()
+   integer(kind=our_int), pointer :: n_in_patt_local(:)=>null(), &
+        nobs_local(:)=>null(), which_patt_local(:)=>null()
    type(random_gendata) :: rand
    integer(our_int) :: iseed1, iseed2, ijunk
    character(len=*), parameter :: platform = "S+"
@@ -346,6 +349,7 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    if( dyn_dealloc( ybar_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( ysdv_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( imp_list_local, err ) == RETURN_FAIL ) goto 800
+   if( dyn_dealloc( mis_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( n_in_patt_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( nobs_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( which_patt_local, err ) == RETURN_FAIL ) goto 800
@@ -475,6 +479,7 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    ijunk = dyn_dealloc( ybar_local, err)
    ijunk = dyn_dealloc( ysdv_local, err)
    ijunk = dyn_dealloc( imp_list_local, err)
+   ijunk = dyn_dealloc( mis_local, err )
    ijunk = dyn_dealloc( n_in_patt_local, err)
    ijunk = dyn_dealloc( nobs_local, err)
    ijunk = dyn_dealloc( which_patt_local, err)
@@ -511,7 +516,7 @@ subroutine norm_imp_rand(n, r, p, x, y, mvcode, seeds, &
    integer(kind=our_int), intent(out) :: msg_codes( msg_len_max, 8 )
    integer(kind=our_int), intent(out) :: msg_len_actual
    ! declare locals
-   real(kind=our_dble), pointer :: yimp_local(:,:)
+   real(kind=our_dble), pointer :: yimp_local(:,:)=>null()
    type(random_gendata) :: rand
    integer(our_int) :: iseed1, iseed2, ijunk
    character(len=*), parameter :: platform = "S+"
@@ -577,7 +582,7 @@ subroutine norm_imp_mean(n, r, p, x, y, mvcode, &
    integer(kind=our_int), intent(out) :: msg_codes( msg_len_max, 8 )
    integer(kind=our_int), intent(out) :: msg_len_actual
    ! declare locals
-   real(kind=our_dble), pointer :: yimp_local(:,:)
+   real(kind=our_dble), pointer :: yimp_local(:,:)=>null()
    integer(our_int) :: ijunk
    character(len=*), parameter :: platform = "S+"
    type(error_type) :: err

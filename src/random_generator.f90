@@ -494,7 +494,7 @@ contains
       integer(kind=our_int) :: g, ocgn
       ! do it
       gendata%qqssd = .true.
-      ocgn = gendata%curntg  ! save current generator
+      ocgn = gendata%curntg   ! save current generator
       gendata%ig1(1) = iseed1
       gendata%ig2(1) = iseed2
       if( initgn(gendata, -1,err) == RETURN_FAIL) goto 800
@@ -503,10 +503,10 @@ contains
               == RETURN_FAIL ) go to 800
          if( mltmod(a2vw,gendata%ig2(g-1),m2,gendata%ig2(g),err) &
               == RETURN_FAIL ) go to 800
-         gendata%curntg = g	! Set current generator number
+         gendata%curntg = g   ! Set current generator number
          if( initgn(gendata, -1, err) == RETURN_FAIL) goto 800
       end do
-      gendata%curntg = ocgn	! reset current generator
+      gendata%curntg = ocgn   ! reset current generator
       ! normal exit
       ran_setall = RETURN_SUCCESS
       return
@@ -733,7 +733,7 @@ contains
       ms = ms + ((ivalues(5)*60 + ivalues(6))*60 + &
            ivalues(7))*1000 + ivalues(8)
       ms = mod(ms, themax)
-      if(ms == 0) ms = themax	! highly unlikely, but possible
+      if(ms == 0) ms = themax   ! highly unlikely, but possible
       isd1 = ms
       ! For the second seed, take the top 15 bits and swap
       ! with the bottom 16 bits.
@@ -769,7 +769,7 @@ contains
       ! local variables and parameters
       character(len=*), parameter :: subname = "ran_phrasd"
       integer(kind=our_int) :: seed1 ,seed2
-      character, parameter :: table='abcdefghijklmnopqrstuvwxyz'//  &
+      character(len=*), parameter :: table='abcdefghijklmnopqrstuvwxyz'//  &
            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'//'0123456789'// &
            '!@#$%^&*()_+[];:''"<>?,./'
       integer(kind=our_int), parameter :: twop30=1073741824

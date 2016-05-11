@@ -245,6 +245,10 @@ contains
       integer(our_int) :: posn
       ! begin
       err%msg_present = .true.
+      ! to enable string-based messaging, un-comment the lines
+      ! where we write to sInt and sInt2
+      sInt  = "???"
+      sInt2 = "???"
       select case(err_type)
          case(1)
             ! just store the comment
@@ -275,7 +279,7 @@ contains
          case(3)
             ! Observation (iobs)
             if( present( iobs ) ) then
-               write(sInt,"(I12)") iobs
+               ! write(sInt,"(I12)") iobs
                sInt = adjustl(sInt)
             else
                sInt = "???"
@@ -286,7 +290,7 @@ contains
          case(4)
             ! Variable (ivar)
             if( present( ivar ) ) then
-               write(sInt,"(I12)") ivar
+               ! write(sInt,"(I12)") ivar
                sInt = adjustl(sInt)
             else
                sInt = "???"
@@ -297,7 +301,7 @@ contains
          case(5)
             ! Iteration (iiter)
             if( present( iiter ) ) then
-               write(sInt,"(I12)") iiter
+               ! write(sInt,"(I12)") iiter
                sInt = adjustl(sInt)
             else
                sInt = "???"
@@ -308,13 +312,13 @@ contains
          case(6)
             ! Iteration (iiter), Cycle (icycle)
             if( present( iiter ) ) then
-               write(sInt,"(I12)") iiter
+               ! write(sInt,"(I12)") iiter
                sInt = adjustl(sInt)
             else
                sInt = "???"
             end if
             if( present( icycle ) ) then
-               write(sInt2,"(I12)") icycle
+               ! write(sInt2,"(I12)") icycle
                sInt2 = adjustl(sInt2)
             else
                sInt2 = "???"
@@ -350,7 +354,7 @@ contains
       character(len=4) :: plat
       integer :: posn
       logical :: first_time
-      type(err_msg_line), pointer :: cur_line
+      type(err_msg_line), pointer :: cur_line=>null()
       ! determine platform
       if( present(platform) ) then
          plat = platform
@@ -421,7 +425,7 @@ contains
       integer(our_int), intent(out) :: msg_codes(:,:)
       integer(our_int), intent(out) :: nlines ! no. of message lines
       ! local variables
-      type(err_msg_line), pointer :: cur_line
+      type(err_msg_line), pointer :: cur_line=>null()
       ! clean out msg_codes
       msg_codes(:,:) = 0
       ! step through the linked list, appending the lines
