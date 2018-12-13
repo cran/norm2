@@ -43,6 +43,7 @@
 "log3_dealloc                                                            ",&
 "make_xsort_and_ysort                                                    ",&
 "make_xtxinv                                                             ",&
+"matmul_boundcheck                                                       ",&
 "mltmod                                                                  ",&
 "nullify_table                                                           ",&
 "nullify_workspace_type                                                  ",&

@@ -463,24 +463,24 @@ contains
       end do
    end function tolower
    !##################################################################
-   function toupper( sstr1, ilen ) result(sstr2)
-      !	Returns the character string in all upper case
-      integer, intent(in) :: ilen
-      character(len=ilen), intent(in):: sstr1
-      character(len=ilen) :: sstr2
-      integer :: i, j
-      ! begin
-      do i=1,ilen
-         !	Get the ASCII value
-         j = iachar(sstr1(i:i))
-         !	Is it lower case? (97-122)
-         if( (j >96) .and. (j<123) ) then
-            !  If so, find corresponding upper case value
-            j = j - 32
-         end if
-         sstr2(i:i) = achar(j)
-      end do
-   end function toupper
+!   function toupper( sstr1, ilen ) result(sstr2)
+!      !	Returns the character string in all upper case
+!      integer, intent(in) :: ilen
+!      character(len=ilen), intent(in):: sstr1
+!      character(len=ilen) :: sstr2
+!      integer :: i, j
+!      ! begin
+!      do i=1,ilen
+!         !	Get the ASCII value
+!         j = iachar(sstr1(i:i))
+!         !	Is it lower case? (97-122)
+!         if( (j >96) .and. (j<123) ) then
+!            !  If so, find corresponding upper case value
+!            j = j - 32
+!         end if
+!         sstr2(i:i) = achar(j)
+!      end do
+!   end function toupper
    !##################################################################
 end module quick_sort
 !######################################################################

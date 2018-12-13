@@ -6,3 +6,8 @@ CHANGES IN version 2.0.1
    * Problems in Fortran code re: uninitialized pointers were corrected
 
    * Problems with Makevars re: parallel builds were corrected
+
+CHANGES IN version 2.0.2
+
+   * Slight revisions to Fortran source to comply with F95 standard
+

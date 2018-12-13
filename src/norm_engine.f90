@@ -130,7 +130,7 @@ module norm_engine
       integer(kind=our_int) :: ntot=0, n=0, r=0, p=0, npatt=0, &
            nparam = 0
       integer(kind=our_int), pointer :: case_order(:) => null()
-      real(kind=our_dble) :: mvcode = huge( real(0,kind=our_dble) )
+      real(kind=our_dble) :: mvcode = huge(0.D0)
       logical, pointer :: mis(:,:) => null(), lwkp(:) => null()
       integer(kind=our_int), pointer :: &
            first_case_in_patt(:) => null(), &
@@ -200,7 +200,7 @@ contains
       work%npatt = 0
       work%nparam = 0
       if( dyn_dealloc(work%case_order, err) == RETURN_FAIL ) goto 800
-      work%mvcode = huge(real(0,kind=our_dble))
+      work%mvcode = huge(0.D0)
       if( dyn_dealloc(work%mis, err) == RETURN_FAIL ) goto 800
       if( dyn_dealloc(work%first_case_in_patt, err) &
            == RETURN_FAIL ) goto 800
@@ -490,7 +490,7 @@ contains
          end if
          loglik_local( iter_local )  = work%loglik
          logpost_local( iter_local ) = work%loglik + work%logpri
-         if( run_mstep( work ) == RETURN_FAIL) then
+         if( run_mstep( work, err ) == RETURN_FAIL) then
             aborted = .true.
             exit
          end if
@@ -1576,92 +1576,138 @@ contains
       answer = RETURN_FAIL
       if( dyn_alloc(work%ysort, work%n, work%r, err) &
            == RETURN_FAIL) goto 800
+      work%ysort(:,:) = 0.D0
       if( dyn_alloc(work%yimp, work%n, work%r, err) &
            == RETURN_FAIL) goto 800
+      work%yimp(:,:) = 0.D0
       if( dyn_alloc(work%xsort, work%n, work%p, err) &
            == RETURN_FAIL) goto 800
+      work%xsort(:,:) = 0.D0
       if( dyn_alloc(work%nobs, work%r, err) == RETURN_FAIL ) goto 800
+      work%nobs(:) = 0
       if( dyn_alloc(work%ybar, work%r, err) == RETURN_FAIL ) goto 800
+      work%ybar(:) = 0.D0
       if( dyn_alloc(work%ysdv, work%r, err) == RETURN_FAIL ) goto 800
+      work%ysdv(:) = 0.D0
       if( dyn_alloc(work%beta, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%beta(:,:) = 0.D0
       if( dyn_alloc(work%sigma, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%sigma(:,:) = 0.D0
       if( dyn_alloc(work%oldbeta, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%oldbeta(:,:) = 0.D0
       if( dyn_alloc(work%oldsigma, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%oldsigma(:,:) = 0.D0
       if( dyn_alloc(work%oldoldbeta, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%oldoldbeta(:,:) = 0.D0
       if( dyn_alloc(work%oldoldsigma, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%oldoldsigma(:,:) = 0.D0
       if( dyn_alloc(work%ratebeta, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%ratebeta(:,:) = 0.D0
       if( dyn_alloc(work%ratesigma, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%ratesigma(:,:) = 0.D0
       if( dyn_alloc(work%sigma_ridge, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%sigma_ridge(:,:) = 0.D0
       if( dyn_alloc(work%prior_sscp, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%prior_sscp(:,:) = 0.D0
       if( dyn_alloc(work%wkppA, work%p, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkppA(:,:) = 0.D0
       if( dyn_alloc(work%wkp, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkp(:) = 0.D0
       if( dyn_alloc(work%wkprA, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%wkprA(:,:) = 0.D0
       if( dyn_alloc(work%wkrrA, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%wkrrA(:,:) = 0.D0
       if( dyn_alloc(work%wkrrB, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%wkrrB(:,:) = 0.D0
       if( dyn_alloc(work%wkrprpA, work%r*work%p, work%r*work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkrprpA(:,:) = 0.D0
       if( dyn_alloc(work%wkrpA, work%r*work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkrpA(:) = 0.D0
       if( dyn_alloc(work%wkrpB, work%r*work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkrpB(:) = 0.D0
       if( dyn_alloc(work%wknpA, work%n, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wknpA(:,:) = 0.D0
       if( dyn_alloc(work%wknpB, work%n, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wknpB(:,:) = 0.D0
       if( dyn_alloc(work%wknA, work%n, err) &
            == RETURN_FAIL ) goto 800
+      work%wknA(:) = 0.D0
       if( dyn_alloc(work%wknB, work%n, err) &
            == RETURN_FAIL ) goto 800
+      work%wknB(:) = 0.D0
       if( dyn_alloc(work%wknC, work%n, err) &
            == RETURN_FAIL ) goto 800
+      work%wknC(:) = 0.D0
       if( dyn_alloc(work%wkpA, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkpA(:) = 0.D0
       if( dyn_alloc(work%wkpB, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkpB(:) = 0.D0
       if( dyn_alloc(work%wkpC, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%wkpC(:) = 0.D0
       if( dyn_alloc(work%iwkp, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%iwkp(:) = 0
       if( dyn_alloc(work%lwkp, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%lwkp(:) = .FALSE.
       if( dyn_alloc(work%xtxinv, work%p, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%xtxinv(:,:) = 0.D0
       if( dyn_alloc(work%xtxinvfac, work%p, work%p, err) &
            == RETURN_FAIL ) goto 800
+      work%xtxinvfac(:,:) = 0.D0
       if( dyn_alloc(work%wkrA, work%r, err) == RETURN_FAIL ) goto 800
+      work%wkrA(:) = 0.D0
       if( dyn_alloc(work%epsteps, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%epsteps(:,:) = 0.D0
       if( dyn_alloc(work%yhat, work%n, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%yhat(:,:) = 0.D0
       if( dyn_alloc(work%eps, work%n, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%eps(:,:) = 0.D0
       if( dyn_alloc(work%xty, work%p, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%xty(:,:) = 0.D0
       if( dyn_alloc(work%yty, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%yty(:,:) = 0.D0
       if( dyn_alloc(work%sigswp, work%r, work%r, err) &
            == RETURN_FAIL ) goto 800
+      work%sigswp(:,:) = 0.D0
       if( dyn_alloc(work%swept, work%r, err) == RETURN_FAIL ) goto 800
+      work%swept(:) = .false.
       work%nparam = work%p * work%r + ( work%r * (work%r + 1) ) / 2
       if( dyn_alloc(work%theta, work%nparam, err) &
           == RETURN_FAIL ) goto 800
+      work%theta(:) = 0.D0
       if( dyn_alloc(work%oldtheta, work%nparam, err) &
           == RETURN_FAIL ) goto 800
+      work%oldtheta(:) = 0.D0
       if( dyn_alloc(work%worst_weights, work%nparam, err) &
           == RETURN_FAIL ) goto 800
       work%worst_weights(:) = 0.D0
@@ -1671,22 +1717,30 @@ contains
       work%next_em_store_iter = 0
       if( dyn_alloc(work%em_store_theta, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%em_store_theta(:) = 0.D0
       if( dyn_alloc(work%next_em_store_theta, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%next_em_store_theta(:) = 0.D0
       if( dyn_alloc(work%em_thetahat, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%em_thetahat(:) = 0.D0
       work%em_worst_ok = .false.
       if( dyn_alloc(work%uvec, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%uvec(:) = 0.D0
       if( dyn_alloc(work%uvec_new, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%uvec_new(:) = 0.D0
       if( dyn_alloc(work%vvec, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%vvec(:) = 0.D0
       if( dyn_alloc(work%vvec_new, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%vvec_new(:) = 0.D0
       work%worst_frac = 0.D0
       if( dyn_alloc(work%worst_linear_coef, work%nparam, err) &
            == RETURN_FAIL ) goto 800
+      work%worst_linear_coef(:) = 0.D0
       ! normal exit
       answer = RETURN_SUCCESS
       return
@@ -1949,7 +2003,9 @@ contains
       work%sigswp(:,:) = work%sigma(:,:)
       work%swept(:) = .false.
       ! compute yhat = x*beta and observed part of y - yhat
-      work%yhat = matmul( work%xsort, work%beta )
+!      work%yhat = matmul( work%xsort, work%beta ) ! fixMe
+      if( matmul_boundcheck( work%xsort, work%beta, &
+           work%yhat, err ) == RETURN_FAIL ) goto 800
       do i = 1, work%n
          do j = 1, work%r
             if( work%ysort(i,j) /= work%mvcode ) &
@@ -2071,26 +2127,29 @@ contains
            comment = "Attempted logarithm of non-positive number" )
       call err_handle(err, 1, &
            comment = "Cov. matrix became singular or negative definite")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      return
+      goto 800
 750   call err_handle(err, 1, &
            comment = "Cov. matrix became singular or negative definite")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
+      goto 800
+800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
       return
    end function run_estep
    !##################################################################
-   integer(kind=our_int) function run_mstep( work ) result(answer)
+   integer(kind=our_int) function run_mstep( work, err ) result(answer)
       ! Performs the M-step
       implicit none
       ! args
       type(workspace_type), intent(inout) :: work
+      type(error_type), intent(inout) :: err
       ! locals
       character(len=*), parameter :: subname = "run_mstep"
       integer(kind=our_int) :: j, k
       ! begin
       answer = RETURN_FAIL
       ! update beta and sigma
-      work%beta = matmul( work%xtxinv, work%xty )
+!      work%beta = matmul( work%xtxinv, work%xty ) ! fixMe
+      if( matmul_boundcheck( work%xtxinv, work%xty, &
+           work%beta, err ) == RETURN_FAIL ) goto 800
       do j = 1, work%r
          do k = 1, j
             work%wkrrA(j,k) = dot_product( work%xty(:,j), &
@@ -2103,6 +2162,9 @@ contains
            / ( work%prior_df + real( work%n + work%r + 1, our_dble ) )
       ! normal exit
       answer = RETURN_SUCCESS
+      return
+      ! error trap
+800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
       return
    end function run_mstep
    !##################################################################
@@ -2326,7 +2388,7 @@ contains
                end do
             end do
             if( run_estep( work, err ) == RETURN_FAIL) goto 700
-            if( run_mstep( work ) == RETURN_FAIL) goto 800
+            if( run_mstep( work, err ) == RETURN_FAIL) goto 800
             if( update_theta( work ) == RETURN_FAIL ) goto 800
             f1(:) = work%theta(:)
             ! take one step of em from thetahat - delta * vvec,
@@ -2348,7 +2410,7 @@ contains
                end do
             end do
             if( run_estep( work, err ) == RETURN_FAIL) goto 750
-            if( run_mstep( work ) == RETURN_FAIL) goto 800
+            if( run_mstep( work, err ) == RETURN_FAIL) goto 800
             if( update_theta( work ) == RETURN_FAIL ) goto 800
             f2(:) = work%theta(:)
             !! compute ju_new
@@ -2450,7 +2512,9 @@ contains
       work%sigswp(:,:) = work%sigma(:,:)
       work%swept(:) = .false.
       ! compute yhat = x*beta and observed part of y - yhat
-      work%yhat = matmul( work%xsort, work%beta )
+!      work%yhat = matmul( work%xsort, work%beta ) !fixMe
+      if( matmul_boundcheck( work%xsort, work%beta, &
+           work%yhat, err ) == RETURN_FAIL ) goto 800
       do i = 1, work%n
          do j = 1, work%r
             if( work%ysort(i,j) /= work%mvcode ) &
@@ -2611,11 +2675,11 @@ contains
            comment = "Attempted logarithm of non-positive number" )
       call err_handle(err, 1, &
            comment = "Cov. matrix became non-positive definite")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      return
+      goto 800
 750   call err_handle(err, 1, &
            comment = "Cov. matrix became non-positive definite")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
+      goto 800
+800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
       return
    end function run_istep
    !##################################################################
@@ -2635,7 +2699,9 @@ contains
       ! begin
       answer = RETURN_FAIL
       ! compute betahat
-      work%beta = matmul( work%xtxinv, work%xty )
+!      work%beta = matmul( work%xtxinv, work%xty ) ! fixMe
+      if( matmul_boundcheck( work%xtxinv, work%xty, &
+           work%beta, err ) == RETURN_FAIL ) goto 800
       ! compute residual SSCP matrix
       do j = 1, work%r
          do k = 1, j

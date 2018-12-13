@@ -18,6 +18,9 @@
 "Argument wkp1 or wkp2 has incorect length                               ",&
 "Argument wkpp has incorect dimensions                                   ",&
 "Argument x has more columns than rows                                   ",&
+"Arguments a and b not conformable                                       ",&
+"Arguments a and c not conformable                                       ",&
+"Arguments b and c not conformable                                       ",&
 "Arguments x and q have different dimensions                             ",&
 "Arguments x and y have incompatible dimensions                          ",&
 "Attempted division by zero                                              ",&

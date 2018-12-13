@@ -6,13 +6,56 @@ module matrix_methods
    use error_handler
    implicit none
    private ! by default
-   public :: cholesky_in_place, invert_lower, &
+   public :: matmul_boundcheck, cholesky_in_place, invert_lower, &
         premult_lower_by_transpose, sweep_forward, sweep_reverse, &
         householder_qr, householder_qr2, householder_qr_pivot, &
         householder_qr2_pivot, householder_ols
    character(len=*), parameter :: modname = "matrix_methods"
    !####################################################################
 contains 
+   !####################################################################
+   integer(kind=our_int) function matmul_boundcheck(a, b, c, err) &
+        result(answer)
+      !### Matrix multiplication with bound checking
+      implicit none
+      ! declare arguments
+      real(kind=our_dble), intent(in) :: a(:,:), b(:,:)
+      real(kind=our_dble), intent(out) :: c(:,:)
+      type(error_type), intent(inout) :: err
+      ! declare locals
+      integer(kind=our_int) :: i, j, k
+      real(kind=our_dble) :: sum
+      character(len=*), parameter :: subname = "matmul_boundcheck"
+      ! begin
+      answer = RETURN_FAIL
+      if( size(a,1) /= size(c,1) ) goto 700
+      if( size(a,2) /= size(b,1) ) goto 710
+      if( size(b,2) /= size(c,2) ) goto 720
+      do i = 1, size(a,1)
+         do j = 1, size(b,2)
+            sum = 0.D0
+            do k = 1, size(a,2)
+               sum = sum + a(i,k) * b(k,j)
+            end do
+            c(i,j) = sum
+         end do
+      end do
+      ! normal exit
+      answer = RETURN_SUCCESS
+      return
+      ! error traps
+700   call err_handle(err, 1, &
+           comment = "Arguments a and c not conformable" )
+      goto 800
+710   call err_handle(err, 1, &
+           comment = "Arguments a and b not conformable" )
+      goto 800
+720   call err_handle(err, 1, &
+           comment = "Arguments b and c not conformable" )
+      goto 800
+800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
+      return
+   end function matmul_boundcheck
    !####################################################################
    integer(kind=our_int) function cholesky_in_place(a, err) result(answer)
       !### Overwrites lower triangle of a symmetric, pos.-def.

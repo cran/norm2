@@ -734,7 +734,7 @@ contains
            ivalues(7))*1000 + ivalues(8)
       ms = mod(ms, themax)
       if(ms == 0) ms = themax   ! highly unlikely, but possible
-      isd1 = ms
+      isd1 = int(ms, our_int)
       ! For the second seed, take the top 15 bits and swap
       ! with the bottom 16 bits.
       isd2 = mod(isd1,2**16)*(2**15) + int(isd1/(2**15))
