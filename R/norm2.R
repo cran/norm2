@@ -19,7 +19,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
    prior.sscp=NULL, starting.values=NULL, ...){
    #########################################
    y <- obj
-   if( class(y) == "data.frame" ){
+   if( inherits(y, "data.frame") ){
       status <- logical( length(y) )
       for( j in 1:length(y) ) status[j] <- is.factor( y[[j]] )
       if( any(status) ){ 
@@ -42,7 +42,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       }
    else{
       # coerce x to a numeric matrix and check dimensions 
-      if( class(x) == "data.frame" ){
+      if( inherits(x, "data.frame") ){
          status <- logical( length(x) )
          for( j in 1:length(x) ) status[j] <- is.factor( x[[j]] )
          if( any(status) ){
@@ -313,7 +313,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
 	 worst.linear.coef = worst.linear.coef,
          msg = msg)
       # set class and return
-      class(result) <- "norm"
+      class(result) <- c("norm", class(result))
    }
    return(result)}
 #######################################################################
@@ -385,7 +385,7 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
    impute.every=NULL, ...){ 
    #########################################
    y <- obj
-   if( class(y) == "data.frame" ){
+   if( inherits(y, "data.frame") ){
       status <- logical( length(y) )
       for( j in 1:length(y) ) status[j] <- is.factor( y[[j]] )
       if( any(status) ){ 
@@ -408,7 +408,7 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       }
    else{
       # coerce x to a numeric matrix and check dimensions 
-      if( class(x) == "data.frame" ){
+      if( inherits(x, "data.frame") ){
          status <- logical( length(x) )
          for( j in 1:length(x) ) status[j] <- is.factor( x[[j]] )
          if( any(status) ){ 
@@ -770,7 +770,7 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
          ysdv = ysdv,
          msg = msg)
       # set class and return
-      class(result) <- "norm"
+      class(result) <- c("norm", class(result))
    }
    return(result)}
 #######################################################################
@@ -850,7 +850,7 @@ impNorm.default <- function(obj, x=NULL, intercept=TRUE, param,
    seeds=NULL, method="random", ... ){
    #########################################
    y <- obj
-   if( class(y) == "data.frame" ){
+   if( inherits(y, "data.frame") ){
       status <- logical( length(y) )
       for( j in 1:length(y) ) status[j] <- is.factor( y[[j]] )
       if( any(status) ){ 
@@ -873,7 +873,7 @@ impNorm.default <- function(obj, x=NULL, intercept=TRUE, param,
       }
    else{
       # check dimensions of x and coerce to a numeric matrix
-      if( class(x) == "data.frame" ){
+      if( inherits(x, "data.frame") ){
          status <- logical( length(x) )
          for( j in 1:length(x) ) status[j] <- is.factor( x[[j]] )
          if( any(status) ){ 
@@ -1044,7 +1044,7 @@ logpostNorm.default <- function(obj, x=NULL, intercept=TRUE, param,
    prior="uniform", prior.df=NULL, prior.sscp=NULL, ...){
    ##################################
    y <- obj
-   if( class(y) == "data.frame" ){
+   if( inherits(y, "data.frame") ){
       status <- logical( length(y) )
       for( j in 1:length(y) ) status[j] <- is.factor( y[[j]] )
       if( any(status) ){ 
@@ -1074,7 +1074,7 @@ logpostNorm.default <- function(obj, x=NULL, intercept=TRUE, param,
       }
    else{
       # check dimensions of x and coerce to a numeric matrix
-      if( class(x) == "data.frame" ){
+      if( inherits(x, "data.frame") ){
          status <- logical( length(x) )
          for( j in 1:length(x) ) status[j] <- is.factor( x[[j]] )
          if( any(status) ){ 
@@ -1254,7 +1254,7 @@ loglikNorm.default <- function(obj, x=NULL, intercept=TRUE,
    param, ...){
    ##################################
    y <- obj
-   if( class(y) == "data.frame" ){
+   if( inherits(y, "data.frame") ){
       status <- logical( length(y) )
       for( j in 1:length(y) ) status[j] <- is.factor( y[[j]] )
       if( any(status) ){ 
@@ -1284,7 +1284,7 @@ loglikNorm.default <- function(obj, x=NULL, intercept=TRUE,
       }
    else{
       # check dimensions of x and coerce to a numeric matrix
-      if( class(x) == "data.frame" ){
+      if( inherits(x, "data.frame") ){
          status <- logical( length(x) )
          for( j in 1:length(x) ) status[j] <- is.factor( x[[j]] )
          if( any(status) ){ 
@@ -1435,7 +1435,7 @@ summary.norm <- function( object,
    ##########################################
    # S3 method for class "norm"
    ##########################################
-   if( class(object) != "norm" )
+   if( !inherits(object, "norm") )
       stop("Argument should be of class \"norm.\"")
    result <- object
    ###############################################
@@ -1526,7 +1526,7 @@ summary.norm <- function( object,
    }
    #
    # set class and return
-   class(result) <- "summary.norm"
+   class(result) <- c("summary.norm", class(result))
    return( result )}
 #######################################################################
 # private function used by print.summary.norm
@@ -1543,7 +1543,7 @@ print.summary.norm <- function( x, ... ){
    #########################################
    # S3 method for class "summary.norm"
    #########################################
-   if( class(x) != "summary.norm" )
+   if( !inherits(x, "summary.norm") )
       stop("Argument should be of class summary.norm")
    # 
    if( x$show.variables ){

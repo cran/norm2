@@ -11,3 +11,6 @@ CHANGES IN version 2.0.2
 
    * Slight revisions to Fortran source to comply with F95 standard
 
+CHANGES IN version 2.0.3
+
+   * fixed problems in R code: replaced "class(.)==" with "inherits"
