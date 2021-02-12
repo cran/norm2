@@ -3,12 +3,12 @@
 !#####################################################################
 subroutine norm_em(n, r, p, x, y, mvcode, &
         prior_type_int, prior_df, prior_sscp, &
-        max_iter, criterion, estimate_worst, &
-        startval_present, &
-        iter, converged, reldiff, loglik, logpost, &
+        max_iter, criterion, estimate_worst_int, &
+        startval_present_int, &
+        iter, converged_int, reldiff, loglik, logpost, &
         beta, sigma, yimp, &
-        npatt, mis, n_in_patt, nobs, which_patt, ybar, ysdv, &
-        rate_beta, rate_sigma, em_worst_ok, worst_frac, &
+        npatt, mis_int, n_in_patt, nobs, which_patt, ybar, ysdv, &
+        rate_beta, rate_sigma, em_worst_ok_int, worst_frac, &
         nparam, worst_linear_coef, &
         status, msg_len_max, msg_codes, msg_len_actual)
    !DEC$ ATTRIBUTES DLLEXPORT,C,REFERENCE,ALIAS:"norm_em_" :: norm_em
@@ -44,11 +44,11 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    real(kind=our_dble), intent(in) :: prior_sscp(r,r)
    integer(kind=our_int), intent(in) :: max_iter
    real(kind=our_dble), intent(in) :: criterion
-   logical, intent(in) :: estimate_worst
-   logical, intent(in) :: startval_present
+   integer(kind=our_int), intent(in) :: estimate_worst_int
+   integer(kind=our_int), intent(in) :: startval_present_int
    ! declare output arguments
    integer(kind=our_int), intent(out) :: iter
-   logical, intent(out) :: converged
+   integer(kind=our_int), intent(out) :: converged_int
    real(kind=our_dble), intent(out) :: reldiff
    real(kind=our_dble), intent(out) :: loglik(max_iter)
    !   Note: the elements of loglik beyond "iter" are irrelevant.
@@ -58,7 +58,7 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    real(kind=our_dble), intent(inout) :: sigma(r,r)
    real(kind=our_dble), intent(out) :: yimp(n,r)
    integer(kind=our_int), intent(out) :: npatt
-   logical, intent(out) :: mis(n,r)
+   integer(kind=our_int), intent(out) :: mis_int(n,r)
    !   Note: the rows of mis beyond "npatt" are irrelevant.
    integer(kind=our_int), intent(out) :: n_in_patt(n)
    !   Note: the elements of n_in_patt beyond "npatt" are irrelevant.
@@ -68,7 +68,7 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    real(kind=our_dble), intent(out) :: ysdv(r)
    real(kind=our_dble), intent(out) :: rate_beta(p,r)
    real(kind=our_dble), intent(out) :: rate_sigma(r,r)
-   logical, intent(out) :: em_worst_ok
+   integer(kind=our_int), intent(out) :: em_worst_ok_int
    real(kind=our_dble), intent(out) :: worst_frac
    integer(kind=our_int), intent(in) :: nparam
    real(kind=our_dble), intent(out) :: worst_linear_coef(nparam)
@@ -78,16 +78,7 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    integer(kind=our_int), intent(out) :: msg_len_actual
    ! declare local pointers to pass as arguments
    real(kind=our_dble), pointer :: beta_start_local(:,:)=>null(), &
-        sigma_start_local(:,:)=>null(), loglik_local(:)=>null(), &
-        logpost_local(:)=>null(), beta_local(:,:)=>null(), &
-        sigma_local(:,:)=>null(), yimp_local(:,:)=>null()
-   logical, pointer :: mis_local(:,:)=>null()
-   integer(kind=our_int), pointer :: n_in_patt_local(:)=>null(), &
-        nobs_local(:)=>null(), which_patt_local(:)=>null()
-   real(kind=our_dble), pointer :: &
-        ybar_local(:)=>null(), ysdv_local(:)=>null(), &
-        rate_beta_local(:,:)=>null(), rate_sigma_local(:,:)=>null(), &
-        worst_linear_coef_local(:)=>null()
+        sigma_start_local(:,:)=>null()
    ! other locals
    character(len=20) :: prior_type
    integer(our_int) :: ijunk
@@ -96,26 +87,10 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    ! begin
    status = 1
    call err_reset(err)
-   if( dyn_dealloc(   beta_start_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  sigma_start_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( loglik_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( logpost_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(   beta_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  sigma_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  yimp_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  mis_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  n_in_patt_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  nobs_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  which_patt_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  ybar_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  ysdv_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  rate_beta_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  rate_sigma_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc(  worst_linear_coef_local, err ) == RETURN_FAIL ) goto 800
    ! allocate local pointers that need it
    if( dyn_alloc( beta_start_local, p, r, err ) == RETURN_FAIL ) goto 800
    if( dyn_alloc( sigma_start_local, r, r, err ) == RETURN_FAIL ) goto 800
-   if( startval_present) then
+   if( startval_present_int /= 0 ) then
       beta_start_local(:,:) = beta(:,:)
       sigma_start_local(:,:) = sigma(:,:)
    end if
@@ -131,8 +106,9 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    else
       prior_type = "other"
    end if
+   !
    if( run_norm_engine_em(x = x, y = y, mvcode = mvcode, &
-        startval_present = startval_present, &
+        startval_present_int = startval_present_int, &
         beta_start = beta_start_local, &
         sigma_start = sigma_start_local, &
         prior_type = trim(prior_type), &
@@ -140,65 +116,29 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
         prior_sscp = prior_sscp, &
         max_iter = max_iter, &
         criterion = criterion, &
-        estimate_worst = estimate_worst, &
+        estimate_worst_int = estimate_worst_int, &
         err = err, &
         iter = iter, &
-        converged = converged, &
+        converged_int = converged_int, &
         reldiff = reldiff, &
-        loglik = loglik_local, &
-        logpost = logpost_local, &
-        beta = beta_local, &
-        sigma = sigma_local, &
-        yimp = yimp_local, &
-        mis = mis_local, &
-        n_in_patt = n_in_patt_local, &
-        nobs = nobs_local, &
-        which_patt = which_patt_local, &
-        ybar = ybar_local, &
-        ysdv = ysdv_local, &
-        rate_beta = rate_beta_local, &
-        rate_sigma = rate_sigma_local, &
-        em_worst_ok = em_worst_ok, &
+        loglik = loglik, &
+        logpost = logpost, &
+        beta = beta, &
+        sigma = sigma, &
+        yimp = yimp, &
+        npatt = npatt, &
+        mis_int = mis_int, &
+        n_in_patt = n_in_patt, &
+        nobs = nobs, &
+        which_patt = which_patt, &
+        ybar = ybar, &
+        ysdv = ysdv, &
+        rate_beta = rate_beta, &
+        rate_sigma = rate_sigma, &
+        em_worst_ok_int = em_worst_ok_int, &
         worst_frac = worst_frac, &
-        worst_linear_coef = worst_linear_coef_local &
+        worst_linear_coef = worst_linear_coef &
         ) == RETURN_FAIL ) goto 800
-   if( associated( loglik_local ) ) then
-      loglik(:) = 0.D0
-      loglik(1:iter) = loglik_local(1:iter)
-   end if
-   if( associated( logpost_local ) )  then
-      logpost(:) = 0.D0
-      logpost(1:iter) = logpost_local(1:iter)
-   end if
-   if( associated( beta_local ) ) &
-        beta(:,:) = beta_local(:,:)
-   if( associated( sigma_local ) ) &
-        sigma(:,:) = sigma_local(:,:)
-   if( associated( yimp_local ) ) &
-        yimp(:,:) = yimp_local(:,:)
-   if( associated( mis_local ) ) then
-      npatt = size( mis_local, 1 )
-      mis(:,:) = .false.
-      mis( 1:npatt, 1:r ) = mis_local(:,:)
-   end if
-   if( associated( n_in_patt_local ) ) then
-      n_in_patt(:) = 0
-      n_in_patt( 1:npatt ) = n_in_patt_local(:)
-   end if
-   if( associated( nobs_local ) ) &
-      nobs(:) = nobs_local(:)
-   if( associated( which_patt_local ) ) &
-        which_patt(:) = which_patt_local(:)
-   if( associated( ybar_local ) ) &
-        ybar(:) = ybar_local(:)
-   if( associated( ysdv_local ) ) &
-        ysdv(:) = ysdv_local(:)
-   if( associated( rate_beta_local ) ) &
-        rate_beta(:,:) = rate_beta_local(:,:)
-   if( associated( rate_sigma_local ) ) &
-        rate_sigma(:,:) = rate_sigma_local(:,:)
-   if( associated( worst_linear_coef_local ) ) &
-        worst_linear_coef(:) = worst_linear_coef_local(:)
    ! normal exit
    status = 0
 800 continue
@@ -211,31 +151,17 @@ subroutine norm_em(n, r, p, x, y, mvcode, &
    call err_reset(err)
    ijunk = dyn_dealloc( beta_start_local, err )
    ijunk = dyn_dealloc( sigma_start_local, err )
-   ijunk = dyn_dealloc( loglik_local, err )
-   ijunk = dyn_dealloc( logpost_local, err )
-   ijunk = dyn_dealloc( beta_local, err )
-   ijunk = dyn_dealloc( sigma_local, err )
-   ijunk = dyn_dealloc( yimp_local, err )
-   ijunk = dyn_dealloc( mis_local, err )
-   ijunk = dyn_dealloc( n_in_patt_local, err )
-   ijunk = dyn_dealloc( nobs_local, err )
-   ijunk = dyn_dealloc( which_patt_local, err )
-   ijunk = dyn_dealloc( ybar_local, err )
-   ijunk = dyn_dealloc( ysdv_local, err )
-   ijunk = dyn_dealloc( rate_beta_local, err )
-   ijunk = dyn_dealloc( rate_sigma_local, err )
-   ijunk = dyn_dealloc( worst_linear_coef_local, err )
 end subroutine norm_em
 !#####################################################################
 subroutine norm_mcmc(n, r, p, x, y, mvcode, &
         prior_type_int, prior_df, prior_sscp, &
         iter, multicycle, seeds, &
         impute_every, nimps, &
-        save_all_series, save_worst_series, worst_linear_coef, &
+        save_all_series_int, save_worst_series_int, worst_linear_coef, &
         series_length, &
-        beta, sigma, yimp,  iter_actual, beta_series, sigma_series, &
+        beta, sigma, yimp, iter_actual, beta_series, sigma_series, &
         loglik, logpost, worst_series, &
-        npatt, mis, n_in_patt, nobs, which_patt, ybar, ysdv, &
+        npatt, mis_int, n_in_patt, nobs, which_patt, ybar, ysdv, &
         imp_list, nimps_actual, &
         status, msg_len_max, msg_codes, msg_len_actual)
    !DEC$ ATTRIBUTES DLLEXPORT,C,REFERENCE,ALIAS:"norm_mcmc_" :: norm_mcmc
@@ -282,7 +208,8 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    integer(kind=our_int), intent(in) :: seeds(2)
    integer(kind=our_int), intent(in) :: impute_every
    integer(kind=our_int), intent(in) :: nimps
-   logical, intent(in) :: save_all_series, save_worst_series
+   integer(kind=our_int), intent(in) :: save_all_series_int, &
+        save_worst_series_int
    real(kind=our_dble), intent(in) :: &
         worst_linear_coef( p*r + r*(r+1)/2 )
    integer(kind=our_int), intent(in) :: series_length
@@ -300,7 +227,7 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    real(kind=our_dble), intent(out) :: logpost(iter)
    real(kind=our_dble), intent(out) :: worst_series(iter)
    integer(kind=our_int), intent(out) :: npatt
-   logical, intent(out) :: mis(n,r)
+   integer(kind=our_int), intent(out) :: mis_int(n,r)
    !   Note: the rows of mis beyond "npatt" are irrelevant.
    integer(kind=our_int), intent(out) :: n_in_patt(n)
    !   Note: the elements of n_in_patt beyond "npatt" are irrelevant.
@@ -318,17 +245,7 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    ! declare locals
    character(len=20) :: prior_type
    real(kind=our_dble), pointer :: beta_start_local(:,:)=>null(), &
-        sigma_start_local(:,:)=>null(), beta_local(:,:)=>null(), &
-        sigma_local(:,:)=>null(), yimp_local(:,:)=>null(), &
-        beta_series_local(:,:,:)=>null(), &
-        sigma_series_local(:,:,:)=>null(), &
-        worst_series_local(:)=>null(), &
-        loglik_local(:)=>null(), logpost_local(:)=>null(), &
-        ybar_local(:)=>null(), ysdv_local(:)=>null(), &
-        imp_list_local(:,:,:)=>null()
-   logical, pointer :: mis_local(:,:)=>null()
-   integer(kind=our_int), pointer :: n_in_patt_local(:)=>null(), &
-        nobs_local(:)=>null(), which_patt_local(:)=>null()
+        sigma_start_local(:,:)=>null()
    type(random_gendata) :: rand
    integer(our_int) :: iseed1, iseed2, ijunk
    character(len=*), parameter :: platform = "S+"
@@ -338,21 +255,6 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    call err_reset(err)
    if( dyn_dealloc( beta_start_local, err ) == RETURN_FAIL ) goto 800
    if( dyn_dealloc( sigma_start_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( beta_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( sigma_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( yimp_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( beta_series_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( sigma_series_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( worst_series_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( loglik_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( logpost_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( ybar_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( ysdv_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( imp_list_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( mis_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( n_in_patt_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( nobs_local, err ) == RETURN_FAIL ) goto 800
-   if( dyn_dealloc( which_patt_local, err ) == RETURN_FAIL ) goto 800
    ! allocate local pointers that need it
    if( dyn_alloc( beta_start_local, p, r, err ) == RETURN_FAIL ) goto 800
    if( dyn_alloc( sigma_start_local, r, r, err ) == RETURN_FAIL ) goto 800
@@ -386,76 +288,28 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
         max_iter = iter, &
         multicycle = multicycle, &
         impute_every = impute_every, &
-        save_all_series = save_all_series, &
-        save_worst_series = save_worst_series, &
+        save_all_series_int = save_all_series_int, &
+        save_worst_series_int = save_worst_series_int, &
         worst_linear_coef = worst_linear_coef, &
         err = err, &
         iter = iter_actual, &
-        beta = beta_local, &
-        sigma = sigma_local, &
-        loglik = loglik_local, &
-        logpost = logpost_local, &
-        yimp = yimp_local, &
-        mis = mis_local, &
-        n_in_patt = n_in_patt_local, &
-        nobs = nobs_local, &
-        which_patt = which_patt_local, &
-        ybar = ybar_local, &
-        ysdv = ysdv_local, &
-        beta_series = beta_series_local, & ! if save_all_series
-        sigma_series = sigma_series_local, & ! if save_all_series
-        worst_series = worst_series_local, &
+        beta = beta, &
+        sigma = sigma, &
+        loglik = loglik, &
+        logpost = logpost, &
+        yimp = yimp, &
+        npatt = npatt, &
+        mis_int = mis_int, &
+        n_in_patt = n_in_patt, &
+        nobs = nobs, &
+        which_patt = which_patt, &
+        ybar = ybar, &
+        ysdv = ysdv, &
+        beta_series = beta_series, & ! if save_all_series
+        sigma_series = sigma_series, & ! if save_all_series
+        worst_series = worst_series, &
         nimp = nimps_actual, &
-        imp_list = imp_list_local ) == RETURN_FAIL ) goto 800
-   if( associated( beta_local ) ) &
-        beta(:,:) = beta_local(:,:)
-   if( associated( sigma_local ) ) &
-        sigma(:,:) = sigma_local(:,:)
-   if( associated( loglik_local ) ) then
-      loglik(:) = 0.D0
-      loglik(1:iter_actual) = loglik_local(1:iter_actual)
-   end if
-   if( associated( logpost_local ) ) then
-      logpost(:) = 0.D0
-      logpost(1:iter_actual) = logpost_local(1:iter_actual)
-   end if
-   if( associated( yimp_local ) ) &
-        yimp(:,:) = yimp_local(:,:)
-   if( associated( mis_local ) ) then
-      npatt = size( mis_local, 1 )
-      mis(:,:) = .false.
-      mis( 1:npatt, 1:r ) = mis_local(:,:)
-   end if
-   if( associated( n_in_patt_local ) ) then
-      n_in_patt(:) = 0
-      n_in_patt( 1:npatt ) = n_in_patt_local(:)
-   end if
-   if( associated( nobs_local ) ) &
-        nobs(:) = nobs_local(:)
-   if( associated( which_patt_local ) ) &
-        which_patt(:) = which_patt_local(:)
-   if( associated( ybar_local ) ) &
-        ybar(:) = ybar_local(:)
-   if( associated( ysdv_local ) ) &
-        ysdv(:) = ysdv_local(:)
-   if( save_all_series ) then
-      beta_series(:,:,:) = 0.D0
-      beta_series(:,:,1:iter_actual) = &
-           beta_series_local(:,:,1:iter_actual)
-      sigma_series(:,:,:) = 0.D0
-      sigma_series(:,:,1:iter_actual) &
-           = sigma_series_local(:,:,1:iter_actual)
-   end if
-   if( save_worst_series .and. associated( worst_series_local ) ) then
-      worst_series(:) = 0.D0
-      worst_series(1:iter_actual) = worst_series_local(1:iter_actual)
-   else
-      worst_series(:) = 0.D0
-   end if
-   if( impute_every /= 0 ) then
-      imp_list(:,:,:) = 0.D0
-      imp_list(:,:,1:nimps_actual) = imp_list_local(:,:,1:nimps_actual)
-   end if
+        imp_list = imp_list ) == RETURN_FAIL ) goto 800
   ! normal exit
    status = 0
 800 continue
@@ -468,21 +322,6 @@ subroutine norm_mcmc(n, r, p, x, y, mvcode, &
    call err_reset(err)
    ijunk = dyn_dealloc( beta_start_local, err)
    ijunk = dyn_dealloc( sigma_start_local, err)
-   ijunk = dyn_dealloc( beta_local, err)
-   ijunk = dyn_dealloc( sigma_local, err)
-   ijunk = dyn_dealloc( yimp_local, err)
-   ijunk = dyn_dealloc( beta_series_local, err)
-   ijunk = dyn_dealloc( sigma_series_local, err)
-   ijunk = dyn_dealloc( worst_series_local, err)
-   ijunk = dyn_dealloc( loglik_local, err)
-   ijunk = dyn_dealloc( logpost_local, err)
-   ijunk = dyn_dealloc( ybar_local, err)
-   ijunk = dyn_dealloc( ysdv_local, err)
-   ijunk = dyn_dealloc( imp_list_local, err)
-   ijunk = dyn_dealloc( mis_local, err )
-   ijunk = dyn_dealloc( n_in_patt_local, err)
-   ijunk = dyn_dealloc( nobs_local, err)
-   ijunk = dyn_dealloc( which_patt_local, err)
 end subroutine norm_mcmc
 !#####################################################################
 subroutine norm_imp_rand(n, r, p, x, y, mvcode, seeds, &

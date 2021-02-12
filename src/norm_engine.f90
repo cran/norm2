@@ -286,24 +286,27 @@ contains
    integer(kind=our_int) function run_norm_engine_em( &
         ! required inputs
         x, y, mvcode, &
-        startval_present, beta_start, sigma_start, &
+        startval_present_int, beta_start, sigma_start, &
         prior_type, prior_df, prior_sscp, &
-        max_iter, criterion, estimate_worst, &
+        max_iter, criterion, estimate_worst_int, &
         ! required outputs
         err, &
         ! optional outputs
-        iter, converged, reldiff, &
-        loglik, logpost, beta, sigma, yimp, &
-        mis, n_in_patt, nobs, which_patt, ybar, ysdv, &
+        iter, converged_int, reldiff, &
+        loglik, logpost, &
+        beta, sigma, yimp, &
+        npatt, mis_int, n_in_patt, &
+        nobs, which_patt, &
+        ybar, ysdv, &
         rate_beta, rate_sigma, &
-        em_worst_ok, worst_frac, worst_linear_coef ) &
-        result(answer)
+        em_worst_ok_int, worst_frac, worst_linear_coef &
+        ) result(answer)
       ! EM algorithm for ML estimation
       ! Required input arguments:
       !    x = n x p matrix of predictors (completely observed)
       !    y = n x r matrix of responses (missing values allowed)
       !    mvcode = missing-value code for y
-      !    startval_present = logical flag indicating whether user
+      !    startval_present_int = integer flag indicating whether user
       !        is supplying starting values for parameters
       !    beta_start = starting value for beta
       !        (ignored if .not.startval_present, in which case
@@ -326,23 +329,24 @@ contains
       !        If this is not given, it defaults to the
       !        module parameter em_maxits_default
       !    criterion = relative convergence criterion
-      !    estimate_worst = upon convergence, estimate the worst
-      !        fraction of missing information? (T/F)
+      !    estimate_worst_int = upon convergence, estimate the worst
+      !        fraction of missing information? (T=1, F=0)
       ! Outputs (all are optional except err):
       !    err = object of type(error) to hold error message
       !    iter = number of iterations performed
       !    converged = T or F
       !    reldiff = maximum relative difference in elements of
       !       the parameter vector at the last two iterations
-      !    loglik  = array of size iter giving loglikelihood at
+      !    loglik  = array of size max_iter giving loglikelihood at
       !              each iteration
-      !    logpost = array of size iter giving log-posterior
+      !    logpost = array of size max_iter giving log-posterior
       !              density at each iteration
       !    beta = p x r matrix of regression coefficients
       !    sigma = r x r covariance matrix
       !    yimp = imputed version of y before the last iteration
       !        (conditional-mean imputation)
-      !    mis = logical matrix of missingness patterns
+      !    npatt = number of distinct missingness patterns
+      !    mis_int = logical matrix of missingness patterns
       !    n_in_patt = number of observations per pattern
       !    nobs = numbet of observed values per variable
       !    which_patt = missing-data patterns to which the cases belong
@@ -352,7 +356,7 @@ contains
       !     beta, estimated from the last two iterations of EM
       !    rate_sigma = elementwise rates of convergence for
       !     sigma, estimated from the last two iterations of EM
-      !    em_worst_ok = was procedure for estimating the worst
+      !    em_worst_ok_int = was procedure for estimating the worst
       !     fraction of missing information successful? (T/F)
       !    worst_frac = estimated worst fraction of missing info
       !    worst_linear_coef(nparam) = estimated unit vector
@@ -360,34 +364,38 @@ contains
       implicit none
       ! declare required inputs
       real(kind=our_dble), intent(in) :: x(:,:), y(:,:), mvcode
-      logical, intent(in) :: startval_present
+      integer(kind=our_int), intent(in) :: startval_present_int
       real(kind=our_dble), intent(in) :: beta_start(:,:), &
            sigma_start(:,:)
       character(len=*), intent(in) :: prior_type
       real(kind=our_dble), intent(in) :: prior_df, prior_sscp(:,:)
       integer(kind=our_int), intent(in) :: max_iter
       real(kind=our_dble), intent(in) :: criterion
-      logical, intent(in) :: estimate_worst
+      integer(kind=our_int), intent(in) :: estimate_worst_int
       ! declare required outputs
       type(error_type), intent(inout) :: err
       ! declare optional outputs
       integer(kind=our_int), optional, intent(out) :: iter
-      logical, optional, intent(out) :: converged
+      integer(kind=our_int), optional, intent(out) :: converged_int
       real(kind=our_dble), optional, intent(out) :: reldiff
-      real(kind=our_dble), optional, pointer :: loglik(:), logpost(:), &
+      real(kind=our_dble), optional, intent(out) :: loglik(:), logpost(:)
+      real(kind=our_dble), optional, intent(out) :: &
            beta(:,:), sigma(:,:), yimp(:,:)
-      logical, optional, pointer :: mis(:,:)
-      integer(kind=our_int), optional, pointer :: n_in_patt(:), &
+      integer(kind=our_int), optional, intent(out) :: npatt
+      integer(kind=our_int), optional, intent(out) :: mis_int(:,:)
+      integer(kind=our_int), optional, intent(out) :: n_in_patt(:)
+      integer(kind=our_int), optional, intent(out) :: &
            nobs(:), which_patt(:)
-      real(kind=our_dble), optional, pointer :: ybar(:), ysdv(:)
-      real(kind=our_dble), optional, pointer :: rate_beta(:,:), &
+      real(kind=our_dble), optional, intent(out) :: ybar(:), ysdv(:)
+      real(kind=our_dble), optional, intent(out) :: rate_beta(:,:), &
            rate_sigma(:,:)
-      logical, optional, intent(out) :: em_worst_ok
+      integer(kind=our_int), optional, intent(out) :: em_worst_ok_int
       real(kind=our_dble), optional, intent(out) :: worst_frac
-      real(kind=our_dble), optional, pointer :: worst_linear_coef(:)
+      real(kind=our_dble), optional, intent(out) :: worst_linear_coef(:)
       ! declare locals
-      integer(kind=our_int) :: iter_local
-      logical :: converged_local, aborted
+      integer(kind=our_int) :: iter_local, i, j
+      logical :: startval_present, estimate_worst, &
+           converged_local, aborted
       real(kind=our_dble), pointer :: loglik_local(:)=>null(), &
            logpost_local(:)=>null()
       type(workspace_type) :: work
@@ -421,11 +429,21 @@ contains
       !
       if( criterion < 0.D0 ) goto 240
       !
+      if( startval_present_int /= 0 ) then
+         startval_present = .true.
+      else
+         startval_present = .false.
+      end if
       if( startval_present ) then
          if( ( size(beta_start,1) /= size(x,2) ) .or. &
               ( size(beta_start,2) /= size(y,2) ) ) goto 250
          if( ( size(sigma_start, 1) /= size(y,2) ) .or. &
              ( size(sigma_start, 2) /= size(y,2) ) ) goto 260
+      end if
+      if( estimate_worst_int /= 0 ) then
+         estimate_worst = .true.
+      else
+         estimate_worst = .false.
       end if
       ! set up workspace
       work%n = size(y,1)
@@ -535,74 +553,88 @@ contains
       ! report the desired results, even if EM was aborted
       ! or didn't run at all
       if( present( iter ) ) iter = iter_local
-      if( present( converged ) ) converged = converged_local
+      if( present( converged_int ) ) then
+         if( converged_local ) then
+            converged_int = 1
+         else
+            converged_int = 0
+         end if
+      end if
       if( present( reldiff ) ) reldiff = work%reldiff
       if( present( loglik ) ) then
-         if( dyn_alloc( loglik, iter_local, err) == RETURN_FAIL ) goto 800
-         loglik(:) = loglik_local(1:iter_local)  
+         if( size( loglik ) /= max_iter) goto 300
+         loglik(:) = loglik_local(:)  
       end if
       if( present( logpost ) ) then
-         if( dyn_alloc( logpost, iter_local, err) == RETURN_FAIL ) goto 800
-         logpost(:) = logpost_local(1:iter_local)  
+         if( size( logpost ) /= max_iter ) goto 310
+         logpost(:) = logpost_local(:)  
       end if
       if( present( beta ) ) then
-         if( dyn_alloc( beta, work%p, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( beta, 1) /= work%p ) goto 320
+         if( size( beta, 2) /= work%r ) goto 320
          beta(:,:) = work%beta(:,:)
       end if
       if( present( sigma ) ) then
-         if( dyn_alloc( sigma, work%r, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( sigma, 1 ) /= work%r ) goto 330
+         if( size( sigma, 2 ) /= work%r ) goto 330
          sigma(:,:) = work%sigma(:,:)
       end if
       if( present( yimp ) ) then
-         if( dyn_alloc( yimp, work%n, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( yimp, 1 ) /= work%n ) goto 340
+         if( size( yimp, 2 ) /= work%r ) goto 340
          yimp(:,:) = work%yimp(:,:)
       end if
-      if( present( mis ) ) then
-         if( dyn_alloc( mis, work%npatt, work%r, err) &
-           == RETURN_FAIL ) goto 800
-         mis(:,:) = work%mis(:,:)
+      if( present( npatt ) ) then
+         npatt = work%npatt
+      end if
+      if( present( mis_int ) ) then
+         if( size( mis_int, 1 ) /= work%n ) goto 350
+         if( size( mis_int, 2 ) /= work%r ) goto 350
+         mis_int(:,:) = 0
+         do i = 1, work%npatt
+            do j = 1, work%r
+               if( work%mis(i,j) ) mis_int(i,j) = 1
+            end do
+         end do
       end if
       if( present( n_in_patt ) ) then
-         if( dyn_alloc( n_in_patt, work%npatt, err) &
-           == RETURN_FAIL ) goto 800
-         n_in_patt(:) = work%n_in_patt(:)
+         if( size( n_in_patt ) /= work%n ) goto 360
+         n_in_patt(:) = 0
+         n_in_patt( 1:work%npatt ) = work%n_in_patt(:)
       end if
       if( present( nobs ) ) then
-         if( dyn_alloc(nobs, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( nobs ) /= work%r ) goto 370
          nobs(:) = work%nobs(:)
       end if
       if( present( which_patt ) ) then
-         if( dyn_alloc(which_patt, work%n, err) == RETURN_FAIL ) goto 800
+         if( size( which_patt ) /= work%n ) goto 380
          which_patt(:) = work%which_patt(:)
       end if
       if( present( ybar ) ) then
-         if( dyn_alloc(ybar, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( ybar ) /= work%r ) goto 390
          ybar(:) = work%ybar(:)
       end if
       if( present( ysdv ) ) then
-         if( dyn_alloc(ysdv, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( ysdv ) /= work%r ) goto 400
          ysdv(:) = work%ysdv(:)
       end if
       if( present( rate_beta ) ) then
+         if( size( rate_beta, 1 ) /= work%p ) goto 410
+         if( size( rate_beta, 2 ) /= work%r ) goto 410
          if( ( iter_local > 2 ) .or. &
               ( ( iter_local == 2) .and. (.not. aborted ) ) ) then
             ! only report the rates if at least two iterations were
             ! successfully completed
-            if( dyn_alloc(rate_beta, work%p, work%r, err) &
-                 == RETURN_FAIL ) goto 800
             rate_beta(:,:) = work%ratebeta(:,:)
          end if
       end if
       if( present( rate_sigma ) ) then
+         if( size( rate_sigma, 1 ) /= work%r ) goto 420
+         if( size( rate_sigma, 2 ) /= work%r ) goto 420
          if( ( iter_local > 2 ) .or. &
               ( ( iter_local == 2) .and. (.not. aborted ) ) ) then
             ! only report the rates if at least two iterations were
             ! successfully completed
-            if( dyn_alloc(rate_sigma, work%r, work%r, err) &
-                 == RETURN_FAIL ) goto 800
             rate_sigma(:,:) = work%ratesigma(:,:)
          end if
       end if
@@ -619,8 +651,12 @@ contains
             ijunk = estimate_worst_frac( work, err )
          end if
       end if
-      if( present( em_worst_ok ) ) then
-         em_worst_ok = work%em_worst_ok
+      if( present( em_worst_ok_int ) ) then
+         if( work%em_worst_ok ) then
+            em_worst_ok_int = 1
+         else
+            em_worst_ok_int = 0
+         end if
       end if
       if( present( worst_frac ) ) then
          if( work%em_worst_ok ) then
@@ -630,8 +666,7 @@ contains
          end if
       end if
       if( present( worst_linear_coef ) ) then
-         if( dyn_alloc( worst_linear_coef, work%nparam, err ) &
-              == RETURN_FAIL ) goto 800
+         if( size( worst_linear_coef ) /= work%nparam ) goto 430
          if( work%em_worst_ok ) then
             worst_linear_coef(:) = work%worst_linear_coef(:)
          else
@@ -644,42 +679,74 @@ contains
       ! error traps
 200   call err_handle(err, 1, &
            comment = "Dimensions of x and y not conformable" )
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 223   call err_handle(err, 1, &
            comment = "Prior_df cannot be negative for ridge prior")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 224   call err_handle(err, 1, &
            comment = "Argument prior_sscp has incorrect dimensions")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 228   call err_handle(err, 1, &
            comment = "Prior type not recognized")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 230   call err_handle(err, 1, &
            comment = "Argument max_iter cannot be negative")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 240   call err_handle(err, 1, &
            comment = "Argument criterion cannot be negative")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 250   call err_handle(err, 1, &
            comment = "Incorrect dimensions for argument beta_start")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 260   call err_handle(err, 1, &
            comment = "Incorrect dimensions for argument sigma_start")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
+300   call err_handle(err, 1, &
+           comment = "Argument loglik has incorrect size")
+      goto 800
+310   call err_handle(err, 1, &
+           comment = "Argument logpost has incorrect size")
+      goto 800
+320   call err_handle(err, 1, &
+           comment = "Argument beta has incorrect shape")
+      goto 800
+330   call err_handle(err, 1, &
+           comment = "Argument sigma has incorrect shape")
+      goto 800
+340   call err_handle(err, 1, &
+           comment = "Argument yimp has incorrect shape")
+      goto 800
+350   call err_handle(err, 1, &
+           comment = "Argument mis has incorrect shape")
+      goto 800
+360   call err_handle(err, 1, &
+           comment = "Argument n_in_patt has incorrect size")
+      goto 800
+370   call err_handle(err, 1, &
+           comment = "Argument nobs has incorrect size")
+      goto 800
+380   call err_handle(err, 1, &
+           comment = "Argument which_patt has incorrect size")
+      goto 800
+390   call err_handle(err, 1, &
+           comment = "Argument ybar has incorrect size")
+      goto 800
+400   call err_handle(err, 1, &
+           comment = "Argument ysdv has incorrect size")
+      goto 800
+410   call err_handle(err, 1, &
+           comment = "Argument rate_beta has incorrect shape")
+      goto 800
+420   call err_handle(err, 1, &
+           comment = "Argument rate_sigma has incorrect shape")
+      goto 800
+430   call err_handle(err, 1, &
+           comment = "Argument worst_linear_coef has incorrect size")
+      goto 800
 800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
       goto 999
       ! final cleanup
 999   ijunk = nullify_workspace_type(work, err)
-      ijunk = dyn_dealloc( loglik_local, err )
-      ijunk = dyn_dealloc( logpost_local, err )
    end function run_norm_engine_em
    !##################################################################
    integer(kind=our_int) function run_norm_engine_mcmc( &
@@ -689,12 +756,12 @@ contains
         beta_start, sigma_start, &
         prior_type, prior_df, prior_sscp, &
         max_iter, multicycle, impute_every, &
-        save_all_series, save_worst_series, worst_linear_coef, &
+        save_all_series_int, save_worst_series_int, worst_linear_coef, &
         ! required outputs
         err, &
         ! optional outputs
         iter, beta, sigma, loglik, logpost, yimp, &
-        mis, n_in_patt, nobs, which_patt, ybar, ysdv, &
+        npatt, mis_int, n_in_patt, nobs, which_patt, ybar, ysdv, &
         beta_series, sigma_series, worst_series, &
         nimp, imp_list) &
         result(answer)
@@ -748,6 +815,7 @@ contains
       !    logpost = array of size iter giving log-posterior
       !              density at each iteration
       !    yimp = imputed version of y, last simulated value
+      !    npatt = number of distinct missingness patterns
       !    mis = logical matrix of missingness patterns
       !    n_in_patt = number of observations per pattern
       !    nobs = numbet of observed values per variable
@@ -776,22 +844,25 @@ contains
       integer(kind=our_int), intent(in) :: max_iter
       integer(kind=our_int), intent(in) :: multicycle
       integer(kind=our_int), intent(in) :: impute_every
-      logical, intent(in) :: save_all_series, save_worst_series
+      integer(kind=our_int), intent(in) :: save_all_series_int, &
+           save_worst_series_int
       real(kind=our_dble), intent(in) :: worst_linear_coef(:)
       ! declare required outputs
       type(error_type), intent(inout) :: err
       ! declare optional outputs
       integer(kind=our_int), optional, intent(out) :: iter
-      real(kind=our_dble), optional, pointer :: beta(:,:), sigma(:,:), &
-           loglik(:), logpost(:), yimp(:,:)
-      logical, optional, pointer :: mis(:,:)
-      integer(kind=our_int), optional, pointer :: n_in_patt(:), &
+      real(kind=our_dble), optional, intent(out) :: beta(:,:), sigma(:,:), &
+           yimp(:,:), loglik(:), logpost(:)
+      integer, optional, intent(out) :: npatt
+      integer(kind=our_int), optional, intent(out) :: mis_int(:,:)
+      integer(kind=our_int), optional, intent(out) :: n_in_patt(:)
+      integer(kind=our_int), optional, intent(out) :: &
            nobs(:), which_patt(:)
-      real(kind=our_dble), optional, pointer :: ybar(:), ysdv(:)
-      real(kind=our_dble), optional, pointer :: beta_series(:,:,:), &
+      real(kind=our_dble), optional, intent(out) :: ybar(:), ysdv(:)
+      real(kind=our_dble), optional, intent(out) :: beta_series(:,:,:), &
            sigma_series(:,:,:), worst_series(:)
       integer(kind=our_int), optional, intent(out) :: nimp
-      real(kind=our_dble), optional, pointer :: imp_list(:,:,:)
+      real(kind=our_dble), optional, intent(out) :: imp_list(:,:,:)
       ! declare locals
       integer(kind=our_int) :: iter_local, iter_complete
       integer(kind=our_int) :: ijunk, nimps, impno, r, p, nparam, &
@@ -804,7 +875,7 @@ contains
            imp_list_local(:,:,:)=>null()
       type(workspace_type) :: work
       character(len=12) :: sInt, sInt2
-      logical :: aborted
+      logical :: aborted, save_all_series, save_worst_series
       real(kind=our_dble) :: num, denom
       character(len=*), parameter :: subname = "run_norm_engine_mcmc"
       integer(our_int) :: i,j,k
@@ -812,6 +883,10 @@ contains
       answer = RETURN_FAIL
       sInt = "???"
       sInt2 = "???"
+      save_all_series = .false.
+      if( save_all_series_int /= 0 ) save_all_series = .true.
+      save_worst_series = .false.
+      if( save_worst_series_int /= 0 ) save_worst_series = .true.
       ! check args
       if( size(y,1) /= size(x,1) ) goto 200
       !
@@ -989,61 +1064,67 @@ contains
       ! or didn't run at all
       if( present( iter ) ) iter = iter_complete
       if( present( loglik ) ) then
-         if( dyn_alloc( loglik, iter_complete, err) == RETURN_FAIL ) goto 800
-         loglik(:) = loglik_local(1:iter_complete)  
+         if( size( loglik ) /= max_iter ) goto 330
+         loglik(:) = loglik_local(:)
       end if
       if( present( logpost ) ) then
-         if( dyn_alloc( logpost, iter_complete, err) == RETURN_FAIL ) goto 800
-         logpost(:) = logpost_local(1:iter_complete)  
+         if( size( logpost ) /= max_iter ) goto 340
+         logpost(:) = logpost_local(:)
       end if
       if( present( beta ) ) then
-         if( dyn_alloc( beta, work%p, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( beta, 1 ) /= work%p ) goto 300
+         if( size( beta, 2 ) /= work%r ) goto 300
          beta(:,:) = work%beta(:,:)
       end if
       if( present( sigma ) ) then
-         if( dyn_alloc( sigma, work%r, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( sigma, 1 ) /= work%r ) goto 310
+         if( size( sigma, 2 ) /= work%r ) goto 310
          sigma(:,:) = work%sigma(:,:)
       end if
       if( present( yimp ) ) then
-         if( dyn_alloc( yimp, work%n, work%r, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( yimp, 1 ) /= work%n ) goto 320
+         if( size( yimp, 2 ) /= work%r ) goto 320
          yimp(:,:) = work%yimp(:,:)
       end if
-      if( present( mis ) ) then
-         if( dyn_alloc( mis, work%npatt, work%r, err) &
-           == RETURN_FAIL ) goto 800
-         mis(:,:) = work%mis(:,:)
+      if( present( npatt ) ) then
+         npatt = work%npatt
+      end if
+      if( present( mis_int ) ) then
+         if( size( mis_int, 1 ) /= work%n ) goto 350
+         if( size( mis_int, 2 ) /= work%r ) goto 350
+         mis_int(:,:) = 0
+         do i = 1, work%npatt
+            do j = 1, work%r
+               if( work%mis(i,j) ) mis_int(i,j) = 1
+            end do
+         end do
       end if
       if( present( n_in_patt ) ) then
-         if( dyn_alloc( n_in_patt, work%npatt, err) &
-           == RETURN_FAIL ) goto 800
-         n_in_patt(:) = work%n_in_patt(:)
+         if( size( n_in_patt ) /= work%n ) goto 360
+         n_in_patt(:) = 0
+         n_in_patt( 1:work%npatt ) = work%n_in_patt( 1:work%npatt )
       end if
       if( present( nobs ) ) then
-         if( dyn_alloc(nobs, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( nobs ) /= work%r ) goto 370
          nobs(:) = work%nobs(:)
       end if
       if( present( which_patt ) ) then
-         if( dyn_alloc(which_patt, work%n, err) == RETURN_FAIL ) goto 800
+         if( size( which_patt ) /= work%n ) goto 380
          which_patt(:) = work%which_patt(:)
       end if
       if( present( ybar ) ) then
-         if( dyn_alloc(ybar, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( ybar ) /= work%r ) goto 390
          ybar(:) = work%ybar(:)
       end if
       if( present( ysdv ) ) then
-         if( dyn_alloc(ysdv, work%r, err) == RETURN_FAIL ) goto 800
+         if( size( ysdv ) /= work%r ) goto 400
          ysdv(:) = work%ysdv(:)
       end if
       if( present( beta_series ) .and. save_all_series ) then
-         if( dyn_alloc( beta_series, work%p, work%r, iter_complete, err) &
-              == RETURN_FAIL ) goto 800
-         ! for some reason, the next line causes a stack overflow
-         ! when the series is large.
-         ! beta_series(:,:,:) = beta_series_local(:,:,1:iter_complete)
-         ! so we'll do it manually.
+         if( size( beta_series, 1 ) /= work%p ) goto 410
+         if( size( beta_series, 2 ) /= work%r ) goto 410
+         if( size( beta_series, 3 ) < iter_complete ) goto 410
+         beta_series(:,:,:) = 0.D0
          do k = 1, iter_complete
             do j = 1, work%r
                do i = 1, work%p
@@ -1053,12 +1134,10 @@ contains
          end do
       end if
       if( present( sigma_series ) .and. save_all_series ) then
-         if( dyn_alloc( sigma_series, work%r, work%r, iter_complete, err) &
-              == RETURN_FAIL ) goto 800
-         ! for some reason, the next line causes a stack overflow
-         ! when the series is large.
-         !  sigma_series(:,:,:) = sigma_series_local(:,:,1:iter_complete)
-         ! so we'll do it manually.
+         if( size( sigma_series, 1 ) /= work%r ) goto 420
+         if( size( sigma_series, 2 ) /= work%r ) goto 420
+         if( size( sigma_series, 3 ) < iter_complete ) goto 420
+         sigma_series(:,:,:) = 0.D0
          do k = 1, iter_complete
             do j = 1, work%r
                do i = 1, work%r
@@ -1068,14 +1147,15 @@ contains
          end do
       end if
       if( present( worst_series ) .and. save_worst_series ) then
-         if( dyn_alloc( worst_series, iter_complete, err) &
-              == RETURN_FAIL ) goto 800
-         worst_series(:) = worst_series_local(1:iter_complete)
+         if( size( worst_series ) /= max_iter ) goto 430
+         worst_series(:) = worst_series_local(:)
       end if
       if( present( nimp ) ) nimp = impno
       if( present( imp_list ) .and. ( impno > 0 ) ) then
-         if( dyn_alloc( imp_list, work%n, work%r, impno, err) &
-              == RETURN_FAIL ) goto 800
+         if( size( imp_list, 1 ) /= work%n ) goto 440
+         if( size( imp_list, 2 ) /= work%r ) goto 440
+         if( size( imp_list, 3 ) < impno ) goto 440
+         imp_list(:,:,:) = 0.D0
          do k = 1, impno
             do j = 1, work%r
                do i = 1, work%n
@@ -1090,48 +1170,82 @@ contains
       ! error traps
 200   call err_handle(err, 1, &
            comment = "Dimensions of x and y not conformable" )
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 223   call err_handle(err, 1, &
            comment = "Prior_df cannot be negative for ridge prior")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 224   call err_handle(err, 1, &
            comment = "Argument prior_sscp has incorrect dimensions")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 228   call err_handle(err, 1, &
            comment = "Prior type not recognized")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 230   call err_handle(err, 1, &
            comment = "Argument max_iter must be positive")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 235   call err_handle(err, 1, &
            comment = "Argument multicycle must be positive")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 240   call err_handle(err, 1, &
            comment = "Argument impute_every cannot be negative")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 245   call err_handle(err, 1, &
            comment = "Argument impute_every cannot exceed max_iter")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 250   call err_handle(err, 1, &
            comment = "Incorrect dimensions for argument beta_start")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 260   call err_handle(err, 1, &
            comment = "Incorrect dimensions for argument sigma_start")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
 270   call err_handle(err, 1, &
            comment = "Incorrect size for argument worst_linear_coef")
-      call err_handle(err, 2, whichsub = subname, whichmod = modname )
-      goto 999
+      goto 800
+300   call err_handle(err, 1, &
+           comment = "Argument beta has incorrect shape")
+      goto 800
+310   call err_handle(err, 1, &
+           comment = "Argument sigma has incorrect shape")
+      goto 800
+320   call err_handle(err, 1, &
+           comment = "Argument yimp has incorrect shape")
+      goto 800
+330   call err_handle(err, 1, &
+           comment = "Argument loglik has incorrect size")
+      goto 800
+340   call err_handle(err, 1, &
+           comment = "Argument logpost has incorrect size")
+      goto 800
+350   call err_handle(err, 1, &
+           comment = "Argument mis_int has incorrect size")
+      goto 800
+360   call err_handle(err, 1, &
+           comment = "Argument n_in_patt has incorrect size")
+      goto 800
+370   call err_handle(err, 1, &
+           comment = "Argument nobs has incorrect size")
+      goto 800
+380   call err_handle(err, 1, &
+           comment = "Argument which_patt has incorrect size")
+      goto 800
+390   call err_handle(err, 1, &
+           comment = "Argument ybar has incorrect size")
+      goto 800
+400   call err_handle(err, 1, &
+           comment = "Argument ysdv has incorrect size")
+      goto 800
+410   call err_handle(err, 1, &
+           comment = "Argument beta_series has incorrect shape")
+      goto 800
+420   call err_handle(err, 1, &
+           comment = "Argument sigma_series has incorrect shape")
+      goto 800
+430   call err_handle(err, 1, &
+           comment = "Argument worst_series has incorrect size")
+      goto 800
+440   call err_handle(err, 1, &
+           comment = "Argument imp_list has incorrect shape")
+      goto 800
 800   call err_handle(err, 2, whichsub = subname, whichmod = modname )
       goto 999
       ! final cleanup

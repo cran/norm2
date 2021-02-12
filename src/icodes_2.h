@@ -12,12 +12,6 @@
 "fill_sort_strings_and_sort                                              ",&
 "find_max_rel_diff                                                       ",&
 "find_means_and_variances                                                ",&
-"get_integer_table_values                                                ",&
-"get_real_table_values                                                   ",&
-"get_string_table_values                                                 ",&
-"get_table_frequencies                                                   ",&
-"get_table_length                                                        ",&
-"get_table_type                                                          ",&
 "house                                                                   ",&
 "householder_ols                                                         ",&
 "householder_qr                                                          ",&
@@ -32,9 +26,6 @@
 "int3_alloc                                                              ",&
 "int3_dealloc                                                            ",&
 "invert_lower                                                            ",&
-"kill_integer_tree                                                       ",&
-"kill_real_tree                                                          ",&
-"kill_string_tree                                                        ",&
 "log1_alloc                                                              ",&
 "log1_dealloc                                                            ",&
 "log2_alloc                                                              ",&
@@ -45,7 +36,6 @@
 "make_xtxinv                                                             ",&
 "matmul_boundcheck                                                       ",&
 "mltmod                                                                  ",&
-"nullify_table                                                           ",&
 "nullify_workspace_type                                                  ",&
 "premult_lower_by_transpose                                              ",&
 "qsort_double                                                            ",&
@@ -82,15 +72,6 @@
 "str3_dealloc                                                            ",&
 "sweep_forward                                                           ",&
 "sweep_reverse                                                           ",&
-"tabulate_integer_number                                                 ",&
-"tabulate_integer_variable                                               ",&
-"tabulate_real_number                                                    ",&
-"tabulate_real_variable                                                  ",&
-"tabulate_string                                                         ",&
-"tabulate_string_variable                                                ",&
 "update_rates                                                            ",&
 "update_theta                                                            ",&
 "update_theta_and_oldtheta                                               ",&
-"write_integer_tree_to_table                                             ",&
-"write_real_tree_to_table                                                ",&
-"write_string_tree_to_table                                              ",&

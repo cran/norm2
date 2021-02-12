@@ -290,6 +290,7 @@ R, Version 2} in the library subdirectory \code{doc}.
 
 
 \examples{
+
 ## run EM for marijuana data with strict convergence criterion
 data(marijuana)
 result <- emNorm(marijuana, criterion=1e-06)

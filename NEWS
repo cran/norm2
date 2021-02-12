@@ -14,3 +14,7 @@ CHANGES IN version 2.0.2
 CHANGES IN version 2.0.3
 
    * fixed problems in R code: replaced "class(.)==" with "inherits"
+
+CHANGES IN version 2.0.4
+
+   * fixed problem with error handler that was causing crash on Solaris

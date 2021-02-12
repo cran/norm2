@@ -83,6 +83,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       beta <- matrix( 0., ncol(x), ncol(y) )
       sigma <- matrix( 0., ncol(y), ncol(y) )
       startval.present <- FALSE
+      startval.present.int <- 0L
       }
    else{
       # get user-supplied starting values
@@ -93,6 +94,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       if( ( nrow(sigma)!=ncol(y) ) | (ncol(sigma)!=ncol(y)) )
          stop("Incorrect dimensions for argument sigma.")
       startval.present <- TRUE
+      startval.present.int <- 1L
       }   
    storage.mode(beta) <- "double"
    storage.mode(sigma) <- "double"
@@ -100,6 +102,9 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
    colnames( beta ) <- colnames( y )
    rownames( sigma ) <- colnames( y )
    colnames( sigma ) <- colnames( y )
+   y.imp <- y
+   #########################################
+   estimate.worst.int <- as.integer( estimate.worst )[1L]
    #########################################
    if( prior == "uniform" ){
       prior.type.int <- 1L
@@ -174,18 +179,18 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       prior.sscp = prior.sscp,
       iter.max = iter.max,
       criterion = criterion,
-      estimate.worst = estimate.worst,
-      startval.present = startval.present,
+      estimate.worst.int = estimate.worst.int,
+      startval.present.int = startval.present.int,
       iter = integer(1),
-      converged = logical(1),
+      converged.int = integer(1),
       rel.diff = numeric(1),
       loglik = numeric(iter.max),
       logpost = numeric(iter.max),
       beta = beta,
       sigma = sigma,
-      y.imp = y,
+      y.imp = y.imp,
       npatt = integer(1),
-      mis = matrix( logical(1), nrow(y), ncol(y) ),
+      mis.int = matrix( integer(1), nrow(y), ncol(y) ),
       n.in.patt = integer( nrow(y) ),
       n.obs = integer( ncol(y) ),
       which.patt = integer( nrow(y) ),
@@ -193,7 +198,7 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       ysdv = numeric( ncol(y) ), 
       rate.beta = beta,
       rate.sigma = sigma,
-      em.worst.ok = logical(1),
+      em.worst.ok.int = integer(1),
       worst.frac = numeric(1),
       nparam = nparam,
       worst.linear.coef = numeric(nparam),
@@ -203,6 +208,13 @@ emNorm.default <- function(obj, x=NULL, intercept=TRUE,
       msg.len.actual = integer(1),
       PACKAGE="norm2"
       )
+   #########################################
+   tmp$startval.present <- startval.present
+   tmp$converged <- as.logical( tmp$converged.int )
+   tmp$estimate.worst <- as.logical( tmp$estimate.worst.int )
+   tmp$em.worst.ok <- as.logical( tmp$em.worst.ok.int )
+   tmp$mis <- tmp$mis.int
+   storage.mode( tmp$mis ) <- "logical"
    #########################################
    # display message from Fortran
    msg.lines <- msgNorm( tmp$msg.codes, tmp$msg.len.actual )
@@ -523,7 +535,7 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       if( length(seeds) != 2L ) 
          stop("Two integer seeds were expected.")}
    else{
-      seeds=ceiling( runif(2)*.Machine$integer.max ) }
+      seeds <- ceiling( runif(2)*.Machine$integer.max ) }
    storage.mode(seeds) <- "integer"
    #
    if( is.null(impute.every) ){
@@ -598,8 +610,8 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       seeds = seeds,
       impute.every = impute.every,
       nimps = nimps,
-      save.all.series = save.all.series,
-      save.worst.series = save.worst.series,
+      save.all.series.int = as.integer(save.all.series),
+      save.worst.series.int = as.integer(save.worst.series),
       worst.linear.coef = worst.linear.coef,
       series.length = series.length,
       beta = beta,
@@ -612,7 +624,7 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       logpost = numeric(iter),
       series.worst = series.worst,
       npatt = integer(1),
-      mis = matrix( logical(1), nrow(y), ncol(y) ),
+      mis.int = matrix( integer(1), nrow(y), ncol(y) ),
       n.in.patt = integer( nrow(y) ),
       n.obs = integer( ncol(y) ),
       which.patt = integer( nrow(y) ),
@@ -626,6 +638,11 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       msg.len.actual = integer(1),
       PACKAGE="norm2"
       )
+   #########################################
+   tmp$save.all.series <- as.logical( tmp$save.all.series.int )
+   tmp$save.worst.series <- as.logical( tmp$save.worst.series.int )
+   tmp$mis <- tmp$mis.int
+   storage.mode( tmp$mis.int ) <- "logical"
    #########################################
    # display message from Fortran, if present
    msg.lines <- msgNorm( tmp$msg.codes, tmp$msg.len.actual )
